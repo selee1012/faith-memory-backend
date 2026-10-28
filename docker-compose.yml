@@ -1,0 +1,31 @@
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: faith
+      POSTGRES_PASSWORD: faith
+      POSTGRES_DB: faith_memory
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U faith -d faith_memory"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    profiles: ["app"]  # `docker compose --profile app up` 일 때만 실행
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://faith:faith@db:5432/faith_memory
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
